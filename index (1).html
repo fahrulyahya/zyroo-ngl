@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NGL SPAMMER | BY XEMZZ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { font-family: 'Poppins', sans-serif; transition: background 0.3s; }
+    .dark body { background-color: #000; color: #fff; }
+    .dark .main-card { background-color: #000; border-color: #fff; color: #fff; }
+    .dark input, .dark textarea { border-color: #fff; color: #fff; background: transparent; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-5 bg-white text-black transition-colors duration-300">
+
+  <a href="https://t.me/XemzzXiterz" target="_blank" class="fixed top-5 left-5 bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-full font-bold text-sm shadow-lg z-50 border-2 border-current">
+    <i class="fas fa-code mr-2"></i> DEVELOPER
+  </a>
+
+  <button id="themeToggle" class="fixed top-5 right-5 w-12 h-12 rounded-full border-2 border-black flex items-center justify-center bg-white text-black shadow-lg z-50 dark:bg-black dark:text-white dark:border-white">
+    <i class="fas fa-moon dark:hidden"></i>
+    <i class="fas fa-sun hidden dark:inline"></i>
+  </button>
+
+  <div class="main-card w-full max-w-md p-8 rounded-2xl shadow-2xl border-2 border-black bg-white transition-all duration-300">
+    <h1 class="text-3xl font-black text-center mb-1"><i class="fas fa-paper-plane mr-2"></i>NGL SPAMMER</h1>
+    <p class="text-center text-sm text-gray-400 mb-8 font-medium italic">BY XEMZZ</p>
+
+    <div class="space-y-6">
+      <div id="cooldownNotice" class="hidden bg-red-600 text-white p-4 rounded-xl text-center font-bold animate-pulse">
+        <i class="fas fa-clock mr-2"></i> <span id="cooldownTimer">COOLDOWN: 0s</span>
+      </div>
+
+      <div class="space-y-2">
+        <label class="font-bold text-sm uppercase">Username NGL</label>
+        <input type="text" id="targetUser" placeholder="username_ngl" class="w-full p-3 rounded-xl border-2 border-black outline-none focus:ring-2 ring-gray-400">
+      </div>
+
+      <div class="space-y-2">
+        <label class="font-bold text-sm uppercase">Pesan</label>
+        <textarea id="messageContent" rows="3" placeholder="Tulis pesan..." class="w-full p-3 rounded-xl border-2 border-black outline-none focus:ring-2 ring-gray-400"></textarea>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label class="font-bold text-xs">Jumlah (Max 100)</label>
+          <input type="number" id="totalMessages" value="10" class="w-full p-3 rounded-xl border-2 border-black font-bold bg-transparent">
+        </div>
+        <div class="space-y-2">
+          <label class="font-bold text-xs">Delay (Detik)</label>
+          <input type="number" id="delayTime" step="0.1" value="1" class="w-full p-3 rounded-xl border-2 border-black font-bold bg-transparent">
+        </div>
+      </div>
+
+      <button id="fireButton" class="w-full py-4 bg-black text-white dark:bg-white dark:text-black rounded-xl font-black text-lg hover:opacity-80 transition-all disabled:bg-gray-400">
+        <i class="fas fa-rocket mr-2"></i> MULAI SPAM
+      </button>
+    </div>
+
+    <div class="mt-8 p-5 border-2 border-black rounded-xl space-y-4">
+      <div id="statusDisplay" class="text-center text-xs font-black uppercase tracking-widest">
+        <span id="statusText">System Ready</span>
+      </div>
+      <div class="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-3 overflow-hidden border border-black">
+        <div id="progressFill" class="bg-black dark:bg-white h-full w-0 transition-all duration-300"></div>
+      </div>
+      <div class="flex justify-between text-[10px] font-black text-center uppercase">
+        <div class="flex-1"> <div id="sentCount" class="text-xl">0</div> Sent </div>
+        <div class="flex-1 border-x border-black"> <div id="successRate" class="text-xl">0%</div> Rate </div>
+        <div class="flex-1"> <div id="failedCount" class="text-xl">0</div> Fail </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+
+    if (localStorage.getItem('theme') === 'dark') htmlElement.classList.add('dark');
+
+    themeToggle.addEventListener('click', () => {
+      htmlElement.classList.toggle('dark');
+      localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    const submitBtn = document.getElementById('fireButton');
+    const statusText = document.getElementById('statusText');
+    const progressFill = document.getElementById('progressFill');
+    const sentCount = document.getElementById('sentCount');
+    const successRate = document.getElementById('successRate');
+    const failedCount = document.getElementById('failedCount');
+    const totalMessagesInput = document.getElementById('totalMessages');
+    const cooldownNotice = document.getElementById('cooldownNotice');
+    const cooldownTimer = document.getElementById('cooldownTimer');
+    
+    const COOLDOWN_KEY = 'ngl_spammer_v2_cooldown';
+
+    totalMessagesInput.addEventListener('input', function() {
+      if (parseInt(this.value) > 100) {
+        this.value = 100;
+        statusText.textContent = "Max 100 pesan!";
+      }
+    });
+
+    function checkCooldown() {
+      const cooldownEnd = localStorage.getItem(COOLDOWN_KEY);
+      if (cooldownEnd) {
+        const now = Date.now();
+        const endTime = parseInt(cooldownEnd);
+        if (now < endTime) {
+          const remaining = Math.ceil((endTime - now) / 1000);
+          cooldownTimer.textContent = `COOLDOWN: ${remaining}s`;
+          cooldownNotice.classList.remove('hidden');
+          submitBtn.disabled = true;
+          return remaining;
+        }
+      }
+      localStorage.removeItem(COOLDOWN_KEY);
+      cooldownNotice.classList.add('hidden');
+      submitBtn.disabled = false;
+      return 0;
+    }
+
+    function startCooldown() {
+      const total = parseInt(totalMessagesInput.value);
+      let duration = 30;
+      if (total >= 90) duration = 60;
+      else if (total >= 60) duration = 45;
+      else if (total >= 30) duration = 35;
+
+      localStorage.setItem(COOLDOWN_KEY, (Date.now() + (duration * 1000)).toString());
+      checkCooldown();
+    }
+
+    setInterval(checkCooldown, 1000);
+    checkCooldown();
+
+    function obfuscateString(str) {
+      try {
+        const utf8Bytes = new TextEncoder().encode(str);
+        let binary = "";
+        for (let i = 0; i < utf8Bytes.length; i++) {
+          binary += String.fromCharCode(utf8Bytes[i]);
+        }
+        return btoa(binary).split('').reverse().join('');
+      } catch (e) {
+        return btoa(str).split('').reverse().join('');
+      }
+    }
+
+    submitBtn.addEventListener('click', async function() {
+      const username = document.getElementById('targetUser').value.trim();
+      const message = document.getElementById('messageContent').value.trim();
+      const total = parseInt(totalMessagesInput.value);
+      const delay = parseFloat(document.getElementById('delayTime').value);
+
+      if (!username || !message || isNaN(total) || total < 1) {
+        statusText.textContent = "Isi data dengan benar!";
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> SENDING...';
+      
+      let success = 0, failed = 0;
+      progressFill.style.width = '0%';
+      sentCount.textContent = "0";
+      failedCount.textContent = "0";
+      successRate.textContent = "0%";
+
+      const xemzzData = {
+        xu: obfuscateString(username),
+        xm: obfuscateString(message),
+        xd: obfuscateString(delay.toString()),
+        xt: obfuscateString(total.toString())
+      };
+
+      try {
+        await fetch('/api/ngl', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Xemzz': 'true', 'X-Xemzz-Data': JSON.stringify(xemzzData) },
+          body: JSON.stringify({ username, message })
+        });
+      } catch (e) {}
+
+      for (let i = 0; i < total; i++) {
+        try {
+          const response = await fetch('/api/ngl', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, message: message })
+          });
+          
+          const data = await response.json();
+          if (data.success) { success++; } else { failed++; }
+          
+          const totalSent = success + failed;
+          progressFill.style.width = `${(totalSent / total) * 100}%`;
+          sentCount.textContent = totalSent;
+          failedCount.textContent = failed;
+          successRate.textContent = `${Math.round((success / totalSent) * 100)}%`;
+          
+          statusText.textContent = `SENDING: ${totalSent}/${total}`;
+          if (i < total - 1) await new Promise(resolve => setTimeout(resolve, delay * 1000));
+        } catch (error) {
+          failed++;
+        }
+      }
+
+      submitBtn.innerHTML = '<i class="fas fa-rocket mr-2"></i> MULAI SPAM';
+      statusText.textContent = "SELESAI!";
+      startCooldown();
+    });
+  </script>
+</body>
+</html>
